@@ -45,8 +45,8 @@ AI-powered smart lighting system that detects people using **YOLOv8** and automa
 ### Dashboard View
 
 <div align="center">
-  <img src="screenshots/shot1.png" width="48%" alt="Dashboard">
-  <img src="screenshots/shot2.png" width="48%" alt="Zone Detection">
+  <img src="screenshots/shot1.png" height="400" >
+  <img src="screenshots/shot2.png" height="400" >
 </div>
 
 ---
