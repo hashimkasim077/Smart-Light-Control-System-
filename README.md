@@ -44,10 +44,10 @@ AI-powered smart lighting system that detects people using **YOLOv8** and automa
 
 ### Dashboard View
 
-![Dashboard Screenshot](screenshots/Screenshot%202026-03-26%20114621.png)
+![Dashboard Screenshot](screenshots/shot1.png)
 
 
-![Zone Detection Screenshot](screenshots/Screenshot%202026-03-26%20114706.png)
+![Zone Detection Screenshot](screenshots/shot2.png)
 
 ---
 
