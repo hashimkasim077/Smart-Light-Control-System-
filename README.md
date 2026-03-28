@@ -44,10 +44,10 @@ AI-powered smart lighting system that detects people using **YOLOv8** and automa
 
 ### Dashboard View
 
-<div align="center">
-  <img src="screenshots/shot1.png" height="400" >
-  <img src="screenshots/shot2.png" height="400" >
-</div>
+![Screenshot](screenshots/shot1.png)
+
+
+![Screenshot](screenshots/shot2.png)
 
 ---
 
