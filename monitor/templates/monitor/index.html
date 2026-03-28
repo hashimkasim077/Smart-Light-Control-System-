@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLOv8 Multi-Zone Detection - ESP Light Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+        }
+        
+        .video-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        #video-stream {
+            width: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+        
+        #canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: auto;
+        }
+        
+        .controls-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        .control-group h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 16px;
+            border-bottom: 2px solid #00d4ff;
+            padding-bottom: 5px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #000;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4757 0%, #cc3344 100%);
+            color: #fff;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #2ed573 0%, #1e9e55 100%);
+            color: #fff;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 213, 115, 0.4);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ffa502 0%, #cc8400 100%);
+            color: #000;
+        }
+        
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 165, 2, 0.4);
+        }
+        
+        .input-group {
+            margin: 10px 0;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 13px;
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 14px;
+        }
+        
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+        
+        .status-display {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-label {
+            color: #aaa;
+        }
+        
+        .status-value {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+        
+        .keyboard-hints {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        
+        .keyboard-hints h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+        
+        .key-hint {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+        }
+        
+        .key {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #00d4ff;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid #00d4ff;
+        }
+        
+        .modal-header {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .option-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        
+        .option-item {
+            padding: 15px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .option-item:hover {
+            background: rgba(0, 212, 255, 0.2);
+            transform: translateX(5px);
+        }
+        
+        .option-item.selected {
+            background: rgba(0, 212, 255, 0.3);
+            border: 1px solid #00d4ff;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: bold;
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .notification.success {
+            background: linear-gradient(135deg, #2ed573 0%, #1e9e55 100%);
+        }
+        
+        .notification.error {
+            background: linear-gradient(135deg, #ff4757 0%, #cc3344 100%);
+        }
+        
+        .notification.info {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #000;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .video-source-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .source-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #444;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .source-btn.active {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .source-btn:hover {
+            border-color: #00d4ff;
+        }
+        
+        .light-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .light-panel h4 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .light-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid #444;
+        }
+        
+        .light-item.on {
+            border-left-color: #2ed573;
+            background: rgba(46, 213, 115, 0.1);
+        }
+        
+        .light-item.off {
+            border-left-color: #ff4757;
+            background: rgba(255, 71, 87, 0.1);
+        }
+        
+        .light-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .light-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #444;
+        }
+        
+        .light-item.on .light-indicator {
+            background: #2ed573;
+            box-shadow: 0 0 10px #2ed573;
+        }
+        
+        .light-item.off .light-indicator {
+            background: #ff4757;
+        }
+        
+        .light-toggle {
+            padding: 5px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .light-toggle.on {
+            background: #2ed573;
+            color: #fff;
+        }
+        
+        .light-toggle.off {
+            background: #ff4757;
+            color: #fff;
+        }
+        
+        .polygon-warning {
+            background: rgba(255, 165, 2, 0.2);
+            border: 1px solid #ffa502;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .polygon-warning h4 {
+            color: #ffa502;
+            margin-bottom: 5px;
+        }
+        
+        .polygon-warning p {
+            color: #fff;
+            font-size: 13px;
+        }
+        
+        .esp-api-info {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid #00d4ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        
+        .esp-api-info h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+        
+        .esp-api-info code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #00d4ff;
+        }
+        
+        .debounce-info {
+            background: rgba(46, 213, 115, 0.1);
+            border: 1px solid #2ed573;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+        
+        .debounce-info h4 {
+            color: #2ed573;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💡 YOLOv8 Multi-Zone Detection - ESP Light Control</h1>
+        
+        <div class="main-content">
+            <div class="video-section">
+                <div class="video-container">
+                    <img id="video-stream" src="{% url 'monitor:video_stream' %}" alt="Video Stream">
+                    <canvas id="canvas-overlay"></canvas>
+                </div>
+            </div>
+            
+            <div class="controls-section">
+                <div class="control-group">
+                    <h3>📹 Video Source</h3>
+                    <div class="video-source-selector">
+                        <button class="source-btn active" data-source="webcam">Webcam</button>
+                        <button class="source-btn" data-source="upload">Upload</button>
+                        <button class="source-btn" data-source="select">Select</button>
+                    </div>
+                    
+                    <div id="upload-section" class="input-group" style="display: none;">
+                        <label>Upload Video File</label>
+                        <input type="file" id="video-upload" accept="video/*">
+                    </div>
+                    
+                    <div id="select-section" class="input-group" style="display: none;">
+                        <label>Select from Uploads Folder</label>
+                        <select id="video-select">
+                            <option value="">-- Select Video --</option>
+                            {% for video in available_videos %}
+                            <option value="{{ video }}">{{ video }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="changeVideoSource()">Apply Source</button>
+                </div>
+                
+                <div class="control-group">
+                    <h3>🎮 Video Controls</h3>
+                    <button class="btn btn-primary" onclick="videoControl('play_pause')">⏯ Play/Pause (P)</button>
+                    <button class="btn btn-warning" onclick="videoControl('rewind')">⏪ Rewind 5s (A)</button>
+                    <button class="btn btn-warning" onclick="videoControl('forward')">⏩ Forward 5s (D)</button>
+                </div>
+                
+                <div class="control-group">
+                    <h3>🔷 Zone Management</h3>
+                    <button class="btn btn-success" onclick="configureZones()" id="lock-zone-btn" disabled>🔒 Lock & Split Zone (S)</button>
+                    <button class="btn btn-danger" onclick="resetPolygon()">🔄 Reset Polygon (R)</button>
+                </div>
+                
+                <div class="polygon-warning" id="polygon-warning">
+                    <h4>⚠️ 4-Point Polygon Only</h4>
+                    <p>Click exactly 4 points on the video to draw your zone. After 4 points, polygon auto-closes.</p>
+                </div>
+                
+                <div class="debounce-info">
+                    <h4>⏱️ Anti-Flicker Protection</h4>
+                    <p>Lights stay ON for 3 seconds after person leaves zone to prevent flickering</p>
+                </div>
+                
+                <div class="status-display">
+                    <div class="status-item">
+                        <span class="status-label">Mode:</span>
+                        <span class="status-value" id="status-mode">Drawing</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Polygon Points:</span>
+                        <span class="status-value" id="status-points">0/4</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Sub-Zones:</span>
+                        <span class="status-value" id="status-zones">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Total Count:</span>
+                        <span class="status-value" id="status-count">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Frame:</span>
+                        <span class="status-value" id="status-frame">0/0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Status:</span>
+                        <span class="status-value" id="status-playing">Playing</span>
+                    </div>
+                </div>
+                
+                <div class="light-panel">
+                    <h4>💡 Light Control Panel</h4>
+                    <div id="light-status-list">
+                        <div class="light-item off">
+                            <span>No zones configured</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="esp-api-info">
+                    <h4>🔌 ESP API Endpoints</h4>
+                    <p>ESP Device can access:</p>
+                    <p><code>GET /api/esp/lights/</code> - Get all light states</p>
+                    <p><code>GET /api/esp/light/{id}/</code> - Get specific light</p>
+                    <p><code>POST /api/esp/light/set/</code> - Set light state</p>
+                    <p><code>GET /api/esp/sync/</code> - Sync with detection</p>
+                    <p style="margin-top: 10px;"><strong>Header Required:</strong> <code>X-API-Key: mysecretkey</code></p>
+                </div>
+                
+                <div class="keyboard-hints">
+                    <h4>⌨️ Keyboard Shortcuts</h4>
+                    <div class="key-hint">
+                        <span>Play/Pause</span>
+                        <span class="key">P</span>
+                    </div>
+                    <div class="key-hint">
+                        <span>Rewind 5s</span>
+                        <span class="key">A</span>
+                    </div>
+                    <div class="key-hint">
+                        <span>Forward 5s</span>
+                        <span class="key">D</span>
+                    </div>
+                    <div class="key-hint">
+                        <span>Lock & Split</span>
+                        <span class="key">S</span>
+                    </div>
+                    <div class="key-hint">
+                        <span>Reset Polygon</span>
+                        <span class="key">R</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Zone Configuration Modal -->
+    <div id="zone-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">🔷 Configure Zone Split</div>
+            
+            <div class="input-group">
+                <label>Total Number of Zones (Equals Number of Lights)</label>
+                <input type="number" id="total-zones" min="1" max="8" value="4" onchange="loadZoneOptions()">
+            </div>
+            
+            <div class="option-list" id="zone-options">
+                <!-- Options will be loaded here -->
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="btn btn-success" onclick="confirmZoneSplit()">Confirm</button>
+                <button class="btn btn-danger" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables
+        let selectedZoneOption = 1;
+        let currentVideoSource = 'webcam';
+        let canvas = document.getElementById('canvas-overlay');
+        let ctx = canvas.getContext('2d');
+        let videoContainer = document.querySelector('.video-container');
+        let polygonComplete = false;
+        
+        // Initialize canvas size
+        function resizeCanvas() {
+            canvas.width = videoContainer.offsetWidth;
+            canvas.height = videoContainer.offsetHeight;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        setTimeout(resizeCanvas, 100);
+        
+        // Canvas click handler for polygon drawing (MAX 4 POINTS)
+        canvas.addEventListener('click', function(e) {
+            if (polygonComplete) {
+                showNotification('Polygon complete! Press S to lock or R to reset', 'info');
+                return;
+            }
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Scale to backend dimensions (640xVIDEO_HEIGHT)
+            const scaleX = 640 / canvas.width;
+            const scaleY = 480 / canvas.height;
+            
+            const backendX = x * scaleX;
+            const backendY = y * scaleY;
+            
+            addPolygonPoint(backendX, backendY);
+        });
+        
+        // Add polygon point
+        async function addPolygonPoint(x, y) {
+            try {
+                const response = await fetch('{% url "monitor:add_point" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ x, y })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStatus();
+                    showNotification(data.message, 'info');
+                    
+                    if (data.is_complete) {
+                        polygonComplete = true;
+                        document.getElementById('lock-zone-btn').disabled = false;
+                        showNotification('Polygon complete! Press S to lock & split', 'success');
+                    }
+                } else {
+                    showNotification('Maximum 4 points allowed', 'error');
+                }
+            } catch (error) {
+                showNotification('Error adding point', 'error');
+            }
+        }
+        
+        // Configure zones
+        function configureZones() {
+            if (!polygonComplete) {
+                showNotification('Draw 4 points first!', 'error');
+                return;
+            }
+            document.getElementById('zone-modal').style.display = 'flex';
+            loadZoneOptions();
+        }
+        
+        // Load zone options
+        async function loadZoneOptions() {
+            const totalZones = document.getElementById('total-zones').value;
+            
+            try {
+                const response = await fetch('{% url "monitor:get_zone_options" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ total_zones: parseInt(totalZones) })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const optionsContainer = document.getElementById('zone-options');
+                    optionsContainer.innerHTML = '';
+                    
+                    data.options.forEach(option => {
+                        const div = document.createElement('div');
+                        div.className = 'option-item' + (option.choice === selectedZoneOption ? ' selected' : '');
+                        div.innerHTML = `
+                            <span><strong>[${option.choice}]</strong> ${option.rows} × ${option.cols}</span>
+                            <span>${option.rows} row(s), ${option.cols} column(s)</span>
+                        `;
+                        div.onclick = () => selectZoneOption(option.choice, div);
+                        optionsContainer.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                showNotification('Error loading options', 'error');
+            }
+        }
+        
+        // Select zone option
+        function selectZoneOption(choice, element) {
+            selectedZoneOption = choice;
+            document.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+        
+        // Confirm zone split
+        async function confirmZoneSplit() {
+            const totalZones = document.getElementById('total-zones').value;
+            
+            try {
+                const response = await fetch('{% url "monitor:configure_zones" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        total_zones: parseInt(totalZones),
+                        choice: selectedZoneOption
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    closeModal();
+                    updateStatus();
+                    updateLightPanel();
+                    showNotification(data.message, 'success');
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error configuring zones', 'error');
+            }
+        }
+        
+        // Close modal
+        function closeModal() {
+            document.getElementById('zone-modal').style.display = 'none';
+        }
+        
+        // Reset polygon
+        async function resetPolygon() {
+            try {
+                const response = await fetch('{% url "monitor:reset_polygon" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    polygonComplete = false;
+                    document.getElementById('lock-zone-btn').disabled = true;
+                    updateStatus();
+                    updateLightPanel();
+                    showNotification('Polygon reset - Draw 4 new points', 'info');
+                }
+            } catch (error) {
+                showNotification('Error resetting polygon', 'error');
+            }
+        }
+        
+        // Video control
+        async function videoControl(action) {
+            try {
+                const response = await fetch('{% url "monitor:video_control" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStatus();
+                    if (data.result) {
+                        showNotification(data.result, 'info');
+                    }
+                }
+            } catch (error) {
+                showNotification('Error controlling video', 'error');
+            }
+        }
+        
+        // Change video source
+        async function changeVideoSource() {
+            let videoPath = null;
+            
+            if (currentVideoSource === 'upload') {
+                const fileInput = document.getElementById('video-upload');
+                if (fileInput.files.length > 0) {
+                    showNotification('File upload not implemented in demo', 'info');
+                    return;
+                }
+            } else if (currentVideoSource === 'select') {
+                const select = document.getElementById('video-select');
+                videoPath = select.value;
+                if (!videoPath) {
+                    showNotification('Please select a video', 'error');
+                    return;
+                }
+            }
+            
+            try {
+                const response = await fetch('{% url "monitor:set_source" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        source: currentVideoSource,
+                        video_path: videoPath
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                }
+            } catch (error) {
+                showNotification('Error changing source', 'error');
+            }
+        }
+        
+        // Update status display
+        async function updateStatus() {
+            try {
+                const response = await fetch('{% url "monitor:get_status" %}');
+                const data = await response.json();
+                
+                document.getElementById('status-mode').textContent = data.is_drawing ? 'Drawing' : 'Detection';
+                document.getElementById('status-points').textContent = `${data.polygon_points}/${data.max_polygon_points}`;
+                document.getElementById('status-zones').textContent = data.sub_zones;
+                document.getElementById('status-count').textContent = data.total_count;
+                document.getElementById('status-frame').textContent = `${data.current_frame}/${data.total_frames}`;
+                document.getElementById('status-playing').textContent = data.is_playing ? 'Playing' : 'Paused';
+                
+                // Update lock button state
+                document.getElementById('lock-zone-btn').disabled = !data.polygon_complete;
+                polygonComplete = data.polygon_complete;
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }
+        
+        // Update light panel
+        async function updateLightPanel() {
+            try {
+                const response = await fetch('{% url "monitor:get_light_status" %}');
+                const data = await response.json();
+                
+                if (data.success && data.lights.length > 0) {
+                    const lightList = document.getElementById('light-status-list');
+                    lightList.innerHTML = '';
+                    
+                    data.lights.forEach(light => {
+                        const div = document.createElement('div');
+                        div.className = `light-item ${light.light_on ? 'on' : 'off'}`;
+                        div.innerHTML = `
+                            <div class="light-status">
+                                <div class="light-indicator"></div>
+                                <span>Zone ${light.zone}</span>
+                            </div>
+                            <button class="light-toggle ${light.light_on ? 'on' : 'off'}" 
+                                    onclick="toggleLight(${light.zone}, ${!light.light_on})">
+                                ${light.light_on ? 'ON' : 'OFF'}
+                            </button>
+                        `;
+                        lightList.appendChild(div);
+                    });
+                } else {
+                    document.getElementById('light-status-list').innerHTML = `
+                        <div class="light-item off">
+                            <span>No zones configured</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error updating light status:', error);
+            }
+        }
+        
+        // Toggle light state manually
+        async function toggleLight(lightNumber, state) {
+            try {
+                const response = await fetch('{% url "monitor:set_light_state" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        light_number: lightNumber,
+                        state: state ? 'on' : 'off'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateLightPanel();
+                    showNotification(`Light ${lightNumber} turned ${state ? 'ON' : 'OFF'}`, 'success');
+                }
+            } catch (error) {
+                showNotification('Error toggling light', 'error');
+            }
+        }
+        
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Don't trigger if typing in input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                return;
+            }
+            
+            switch(e.key.toLowerCase()) {
+                case 'p':
+                    videoControl('play_pause');
+                    break;
+                case 'a':
+                    videoControl('rewind');
+                    break;
+                case 'd':
+                    videoControl('forward');
+                    break;
+                case 's':
+                    if (polygonComplete) {
+                        configureZones();
+                    } else {
+                        showNotification('Draw 4 points first!', 'error');
+                    }
+                    break;
+                case 'r':
+                    resetPolygon();
+                    break;
+            }
+        });
+        
+        // Video source selector
+        document.querySelectorAll('.source-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentVideoSource = this.dataset.source;
+                
+                document.getElementById('upload-section').style.display = 
+                    currentVideoSource === 'upload' ? 'block' : 'none';
+                document.getElementById('select-section').style.display = 
+                    currentVideoSource === 'select' ? 'block' : 'none';
+            });
+        });
+        
+        // Auto-update status and lights every 1 second
+        setInterval(updateStatus, 1000);
+        setInterval(updateLightPanel, 1000);
+        
+        // Initial status update
+        updateStatus();
+        updateLightPanel();
+    </script>
+</body>
+</html>
